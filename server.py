@@ -9,7 +9,7 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///sqlitedb.file"
-app.config["SQL_TRACK_MODIFICATIONS"] = 0
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = 0
 
 # configure sqlite3 to enforce foreign key constraints
 @event.listens_for(Engine, "connect")
@@ -18,6 +18,11 @@ def _set_sqlite_pragma(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON;")
         cursor.close()
+
+# connect our ORM to our flask app
+db = SQLAlchemy(app)
+db.init_app(app)
+now = datetime.now()
 
 # models
 class User(db.Model):
@@ -28,3 +33,10 @@ class User(db.Model):
     address = db.Column(db.String(200))
     posts = db.relationship("BlogPost")
 
+class BlogPost(db.Model):
+    __tablename__ = "blog_post"
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(50))
+    body = db.Column(db.String(200))
+    data = db.Column(db.Date)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
